@@ -3,12 +3,13 @@ package application
 import (
 	"net/http"
 	"orders-api/handler"
+	"orders-api/repository/order"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func loadRoutes() *chi.Mux {
+func (app *App) loadRoutes() {
 	router := chi.NewRouter()
 
 	router.Use(middleware.Logger)
@@ -17,13 +18,17 @@ func loadRoutes() *chi.Mux {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	router.Route("/orders", loadOrderRoutes)
+	router.Route("/orders", app.loadOrderRoutes)
 
-	return router
+	app.router = router
 }
 
-func loadOrderRoutes(router chi.Router) {
-	orderHandler := &handler.Order{}
+func (app *App) loadOrderRoutes(router chi.Router) {
+	orderHandler := &handler.Order{
+		Repo: &order.RedisRepo{
+			Client: app.rdb,
+		},
+	}
 
 	router.Post("/", orderHandler.Create)
 	router.Get("/", orderHandler.List)
